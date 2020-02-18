@@ -23,16 +23,26 @@ service: opencvimagewebapi
 provider:
   name: aws
   runtime: python3.7
+  timeout: 900
   region: ap-northeast-1
 
 plugins:
   - serverless-python-requirements
-  - serverless-offline-python
+  - serverless-offline
   - serverless-dotenv-plugin
+  - serverless-wsgi
+  - serverless-apigw-binary
 
 custom:
+  wsgi:
+    app: main.app
+    packRequirements: false
   pythonRequirements:
     dockerizePip: true
+  apigwBinary:
+    types:
+      - 'multipart/form-data'
+      - 'text/html'
 
 # you can overwrite defaults here
 #  stage: dev
@@ -83,14 +93,12 @@ package:
     - .serverless_plugins/**
 
 functions:
-  wordcloud:
-    handler: handler.hello
+  app:
     memorySize: 128
-    timeout: 900
+    handler: wsgi.handler
     events:
-      - http:
-          method: get
-          path: opencv
+      - http: ANY /
+      - http: 'ANY {proxy+}'
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
